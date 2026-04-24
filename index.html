@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111b21">
+<title>Site Expense Tracker</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --green: #00a884;
+  --green-dk: #008069;
+  --green-lt: #d9fdd3;
+  --bg: #111b21;
+  --bg2: #202c33;
+  --bg3: #2a3942;
+  --bg4: #182229;
+  --text: #e9edef;
+  --text2: #8696a0;
+  --text3: #667781;
+  --border: #374045;
+  --bot: #202c33;
+  --user: #005c4b;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --blue: #53bdeb;
+  --radius: 8px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  height:100dvh;
+}
+
+/* ── HEADER ── */
+.hdr{
+  background:var(--bg2);
+  padding:10px 14px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  border-bottom:0.5px solid var(--border);
+  flex-shrink:0;
+  z-index:20;
+}
+.hdr-av{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--green-dk);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:600;font-size:17px;color:#fff;flex-shrink:0;
+}
+.hdr-info{flex:1;min-width:0}
+.hdr-name{font-size:15px;font-weight:600;color:var(--text)}
+.hdr-sub{font-size:12px;color:var(--green)}
+.hdr-btns{display:flex;gap:4px}
+.hdr-btn{
+  width:36px;height:36px;border-radius:50%;border:none;
+  background:transparent;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  transition:background .15s;
+}
+.hdr-btn:hover{background:var(--bg3)}
+
+/* ── SETUP BANNER ── */
+.setup-banner{
+  background:linear-gradient(90deg,#1a3a2a,#1a2d3a);
+  border-bottom:0.5px solid var(--border);
+  padding:10px 14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-shrink:0;
+  cursor:pointer;
+  transition:background .2s;
+}
+.setup-banner:hover{background:var(--bg3)}
+.setup-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--amber);flex-shrink:0;
+  animation:pulse 2s ease-in-out infinite;
+}
+.setup-dot.connected{background:var(--green);animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.setup-text{font-size:12px;color:var(--text2);flex:1;min-width:0}
+.setup-text strong{color:var(--text);display:block;font-size:13px}
+.setup-arrow{font-size:14px;color:var(--text3)}
+
+/* ── SUMMARY BAR ── */
+.sum-toggle{
+  background:var(--bg3);
+  padding:8px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;flex-shrink:0;
+  border-bottom:0.5px solid var(--border);
+  user-select:none;
+}
+.sum-toggle:hover{background:var(--bg4)}
+.sum-label{font-size:12px;color:var(--text2)}
+.sum-total{font-size:14px;font-weight:600;color:#4ade80;font-family:'DM Mono',monospace}
+.sum-arr{font-size:12px;color:var(--text3);transition:transform .25s}
+.sum-arr.open{transform:rotate(180deg)}
+.sum-body{
+  max-height:0;overflow:hidden;
+  transition:max-height .3s ease;
+  flex-shrink:0;background:var(--bg2);
+}
+.sum-body.open{max-height:180px;overflow-y:auto}
+.sum-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+  gap:6px;padding:10px;
+}
+.sum-card{
+  background:var(--bg3);border-radius:6px;
+  padding:8px 10px;border:0.5px solid var(--border);
+}
+.sum-card-lbl{font-size:10px;color:var(--text3);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sum-card-val{font-size:12px;font-weight:600;color:#4ade80;font-family:'DM Mono',monospace}
+
+/* ── CHAT ── */
+.chat{
+  flex:1;overflow-y:auto;
+  padding:10px 10px 6px;
+  display:flex;flex-direction:column;gap:3px;
+  background:var(--bg);
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23182229' fill-opacity='0.7'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+.chat::-webkit-scrollbar{width:3px}
+.chat::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.date-sep{
+  text-align:center;font-size:11px;color:var(--text3);
+  background:rgba(32,44,51,.85);border-radius:6px;
+  padding:3px 10px;width:fit-content;margin:6px auto;
+}
+
+/* ── BUBBLES ── */
+.row{display:flex;margin-bottom:2px;animation:fadeUp .22s ease forwards}
+.row.bot{justify-content:flex-start}
+.row.usr{justify-content:flex-end}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.bbl{
+  max-width:82%;padding:8px 12px;font-size:14px;
+  line-height:1.55;position:relative;
+}
+.row.bot .bbl{background:var(--bot);border-radius:0 var(--radius) var(--radius) var(--radius);color:var(--text)}
+.row.usr .bbl{background:var(--user);border-radius:var(--radius) 0 var(--radius) var(--radius);color:var(--text)}
+
+.bbl .ts{
+  font-size:10px;color:var(--text3);
+  margin-top:3px;text-align:right;display:block;
+}
+.row.usr .bbl .ts{color:rgba(255,255,255,.45)}
+.bbl strong{color:var(--green);font-weight:600}
+.bbl .hi{color:var(--blue)}
+.bbl .amt{color:#4ade80;font-weight:600;font-family:'DM Mono',monospace}
+.bbl .tag{
+  display:inline-block;background:rgba(0,168,132,.15);
+  color:var(--green);font-size:11px;font-weight:600;
+  padding:1px 7px;border-radius:10px;
+  border:1px solid rgba(0,168,132,.25);margin-left:3px;
+}
+.bbl .err{color:#f87171}
+
+/* ── TYPING ── */
+.typing{
+  display:flex;align-items:center;gap:4px;
+  padding:10px 14px;background:var(--bot);
+  border-radius:0 var(--radius) var(--radius) var(--radius);
+  width:fit-content;
+}
+.typing span{
+  width:7px;height:7px;background:var(--text3);border-radius:50%;
+  animation:bounce 1.2s infinite;
+}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ── CHIPS ── */
+.chips{
+  display:flex;flex-wrap:wrap;gap:7px;
+  padding:6px 10px 2px;
+  animation:fadeUp .22s ease forwards;
+}
+.chip{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:18px;padding:6px 13px;font-size:13px;
+  color:var(--text);cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  transition:all .15s;
+}
+.chip:hover,.chip:active{background:var(--green-dk);border-color:var(--green-dk);color:#fff}
+
+/* ── BILL CARD ── */
+.bill-card{
+  background:var(--bg3);border-radius:var(--radius);
+  border:1px solid var(--border);overflow:hidden;margin-top:6px;
+}
+.bill-hdr{
+  background:var(--green-dk);padding:7px 12px;
+  font-size:12px;font-weight:600;color:#fff;
+}
+.bill-row{
+  display:flex;justify-content:space-between;
+  padding:4px 12px;font-size:12px;
+  border-bottom:0.5px solid var(--border);gap:8px;
+}
+.bill-row:last-child{border-bottom:none}
+.bill-row .bl{color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bill-row .br{color:var(--text);font-weight:500;font-family:'DM Mono',monospace;flex-shrink:0}
+.bill-foot{
+  background:rgba(0,168,132,.1);padding:7px 12px;
+  display:flex;justify-content:space-between;font-weight:600;font-size:13px;
+}
+.bill-foot .fl{color:var(--green)}
+.bill-foot .fr{color:#4ade80;font-family:'DM Mono',monospace}
+
+/* ── IMG PREVIEW ── */
+.img-thumb{max-width:200px;border-radius:var(--radius);overflow:hidden;margin-bottom:5px}
+.img-thumb img{width:100%;display:block}
+
+/* ── INPUT BAR ── */
+.ibar{
+  padding:8px 10px;display:flex;align-items:center;gap:8px;
+  background:var(--bg2);flex-shrink:0;
+  border-top:0.5px solid var(--border);
+}
+.iwrap{
+  flex:1;background:var(--bg3);border-radius:22px;
+  display:flex;align-items:flex-end;padding:6px 12px;gap:8px;
+}
+.itxt{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;
+  resize:none;max-height:100px;min-height:24px;line-height:1.4;padding:2px 0;
+}
+.itxt::placeholder{color:var(--text3)}
+.cam-btn{
+  background:transparent;border:none;color:var(--text2);
+  cursor:pointer;padding:4px;line-height:1;
+  transition:color .15s;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.cam-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.cam-btn:hover{color:var(--green)}
+.cam-btn:active{color:var(--green-dk)}
+.send-btn{
+  width:48px;height:48px;border-radius:50%;border:none;
+  background:var(--green);color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .18s;
+  box-shadow:0 2px 8px rgba(0,168,132,0.35);
+}
+.send-btn:hover{background:var(--green-dk);box-shadow:0 3px 12px rgba(0,168,132,0.5);}
+.send-btn:active{transform:scale(.9);}
+.send-btn svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+
+/* ── SETUP MODAL ── */
+.modal-wrap{
+  display:none;
+  position:absolute;inset:0;z-index:50;
+  background:rgba(0,0,0,.7);
+  align-items:flex-end;justify-content:center;
+  padding:0;
+}
+.modal-wrap.show{display:flex}
+.modal{
+  background:var(--bg2);width:100%;max-width:480px;
+  border-radius:20px 20px 0 0;
+  padding:20px 18px 32px;
+  border-top:0.5px solid var(--border);
+  animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{
+  width:36px;height:4px;background:var(--border);
+  border-radius:2px;margin:0 auto 16px;
+}
+.modal h2{font-size:16px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.modal p{font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+.modal label{font-size:12px;color:var(--text3);display:block;margin-bottom:5px;margin-top:12px}
+.modal input{
+  width:100%;background:var(--bg3);border:0.5px solid var(--border);
+  border-radius:var(--radius);padding:10px 12px;
+  color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;
+}
+.modal input:focus{border-color:var(--green)}
+.modal input::placeholder{color:var(--text3)}
+.modal-steps{
+  background:var(--bg3);border-radius:var(--radius);
+  padding:10px 12px;margin-bottom:14px;
+  font-size:12px;color:var(--text2);line-height:1.9;
+}
+.modal-steps strong{color:var(--text)}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+.mbtn{
+  flex:1;padding:11px;border-radius:var(--radius);border:none;
+  font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s;
+}
+.mbtn.primary{background:var(--green);color:#fff}
+.mbtn.primary:hover{background:var(--green-dk)}
+.mbtn.sec{background:var(--bg3);color:var(--text2);border:0.5px solid var(--border)}
+.mbtn.sec:hover{background:var(--border)}
+
+/* ── TOAST ── */
+.toast{
+  position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);color:var(--text);font-size:13px;
+  padding:8px 16px;border-radius:20px;border:0.5px solid var(--border);
+  white-space:nowrap;z-index:30;
+  animation:toastIn .25s ease;
+  pointer-events:none;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── SYNCING INDICATOR ── */
+.sync-ind{
+  position:absolute;top:54px;right:10px;z-index:25;
+  background:var(--bg3);border:0.5px solid var(--border);
+  border-radius:20px;padding:4px 10px;
+  font-size:11px;color:var(--text2);
+  display:none;align-items:center;gap:5px;
+}
+.sync-ind.show{display:flex}
+.sync-spin{
+  width:10px;height:10px;border:1.5px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-av">S</div>
+  <div class="hdr-info">
+    <div class="hdr-name">Site Expense Tracker</div>
+    <div class="hdr-sub" id="hdrSub">online</div>
+  </div>
+  <div class="hdr-btns">
+    <button class="hdr-btn" onclick="openSetup()" title="Google Sheets setup">⚙</button>
+    <button class="hdr-btn" onclick="downloadCSV()" title="Download CSV">↓</button>
+  </div>
+</div>
+
+<!-- SETUP BANNER -->
+<div class="setup-banner" id="setupBanner" onclick="openSetup()">
+  <div class="setup-dot" id="setupDot"></div>
+  <div class="setup-text">
+    <strong id="setupTitle">Connect Google Sheets</strong>
+    <span id="setupDesc">Tap to set up — entries will auto-save to your sheet</span>
+  </div>
+  <span class="setup-arrow">›</span>
+</div>
+
+<!-- SUMMARY -->
+<div class="sum-toggle" onclick="toggleSum()">
+  <span class="sum-label">Total spent</span>
+  <span class="sum-total" id="sumTotal">₹0</span>
+  <span class="sum-arr" id="sumArr">▾</span>
+</div>
+<div class="sum-body" id="sumBody">
+  <div class="sum-grid" id="sumGrid"></div>
+</div>
+
+<!-- SYNC INDICATOR -->
+<div class="sync-ind" id="syncInd">
+  <div class="sync-spin"></div>
+  <span>Saving to Sheets...</span>
+</div>
+
+<!-- CHAT -->
+<div class="chat" id="chat">
+  <div class="date-sep" id="dateSep"></div>
+</div>
+
+<!-- INPUT BAR -->
+<div class="ibar">
+  <div class="iwrap">
+    <textarea class="itxt" id="itxt" placeholder="Type an expense..." rows="1"></textarea>
+    <button class="cam-btn" onclick="document.getElementById('fileInputCamera').click()" title="Take photo">
+      <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </button>
+    <button class="cam-btn" onclick="document.getElementById('fileInputGallery').click()" title="Attach file or PDF">
+      <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+  </div>
+  <button class="send-btn" onclick="send()" title="Send">
+    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+  </button>
+</div>
+
+<input type="file" id="fileInputCamera" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="fileInputGallery" accept="image/*,application/pdf,.pdf" style="display:none">
+
+<!-- SETUP MODAL -->
+<div class="modal-wrap" id="modalWrap" onclick="closeSetupIfOuter(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <h2>Connect Google Sheets</h2>
+    <p>Your entries will automatically save to the correct tab in your sheet — Cement, Bricks, Electrical, etc.</p>
+
+    <div class="modal-steps">
+      <strong>One-time setup (5 minutes):</strong><br>
+      1. Open your Google Sheet<br>
+      2. Click <strong>Extensions → Apps Script</strong><br>
+      3. Delete everything, paste the script I gave you<br>
+      4. Click 💾 Save → then <strong>Deploy → New deployment</strong><br>
+      5. Choose <strong>Web app</strong>, set access to <strong>Anyone</strong><br>
+      6. Click Deploy → copy the URL → paste below
+    </div>
+
+    <label>Your Apps Script Web App URL</label>
+    <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/ABC.../exec" autocomplete="off">
+
+    <div class="modal-btns">
+      <button class="mbtn sec" onclick="closeSetup()">Cancel</button>
+      <button class="mbtn primary" onclick="saveScriptUrl()">Save & Test</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──
+const TABS = ['Cement','JCB','Water','Electrical','Sand and Jalli','Plumbing','Filling Sand','Local Shop','Carpentry','Painting','Tiles','Rod','Fosroc Dr Fixit','Bricks','Tiles Paste','RMC','Batha Expense','Other Expense','EB','UPVC','Granite','Grill'];
+const MOPS = ['Cash','GK Promoters','Srinivas HDFC','Ganesh HDFC','Bank Transfer','Gpay Srinivas'];
+
+let S = {
+  step: 'idle',
+  pending: null,
+  entries: JSON.parse(localStorage.getItem('se_entries') || '[]'),
+  scriptUrl: localStorage.getItem('se_script_url') || '',
+  sumOpen: false,
+};
+
+// ── INIT ──
+function init() {
+  document.getElementById('dateSep').textContent = new Date().toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'long'});
+  updateSetupBanner();
+  updateSummary();
+  setTimeout(welcome, 400);
+
+  document.getElementById('itxt').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  });
+  document.getElementById('itxt').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  ['fileInputCamera','fileInputGallery'].forEach(id => {
+    document.getElementById(id).addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      e.target.value = '';
+      clearChips();
+      S.step = 'idle';
+      await handleBillFile(f);
+    });
+  });
+}
+
+// ── CLOCK ──
+function nowStr() {
+  return new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+}
+
+// ── CHAT RENDERING ──
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function botMsg(html, delay=350) {
+  return new Promise(res => {
+    const tr = mkEl('div','row bot');
+    tr.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+    chat().appendChild(tr); scroll();
+    setTimeout(() => {
+      tr.remove();
+      const r = mkEl('div','row bot');
+      r.innerHTML = `<div class="bbl">${html}<span class="ts">${nowStr()}</span></div>`;
+      chat().appendChild(r); scroll(); res();
+    }, delay);
+  });
+}
+
+function usrMsg(text) {
+  const r = mkEl('div','row usr');
+  r.innerHTML = `<div class="bbl">${esc(text)}<span class="ts">${nowStr()}</span></div>`;
+  chat().appendChild(r); scroll();
+}
+
+function showChips(opts, cb) {
+  clearChips();
+  const row = mkEl('div','chips'); row.id = 'chips';
+  opts.forEach(o => {
+    const c = mkEl('button','chip');
+    c.textContent = o;
+    c.onclick = () => { clearChips(); usrMsg(o); cb(o); };
+    row.appendChild(c);
+  });
+  chat().appendChild(row); scroll();
+}
+
+function clearChips() { document.getElementById('chips')?.remove(); }
+function chat() { return document.getElementById('chat'); }
+function scroll() { setTimeout(() => chat().scrollTop = chat().scrollHeight, 50); }
+function mkEl(tag, cls) { const e = document.createElement(tag); if(cls) e.className = cls; return e; }
+
+function billCard(items, shop, date, total) {
+  const rows = items.slice(0, 9).map(it =>
+    `<div class="bill-row"><span class="bl">${esc(it.name)}${it.qty ? ' ×' + it.qty : ''}</span><span class="br">₹${fmt(it.amount)}</span></div>`
+  ).join('');
+  const more = items.length > 9 ? `<div class="bill-row"><span class="bl" style="color:var(--text3)">...+${items.length-9} more items</span><span class="br"></span></div>` : '';
+  return `<div class="bill-card">
+    <div class="bill-hdr">🧾 ${esc(shop)} · ${esc(date)}</div>
+    ${rows}${more}
+    <div class="bill-foot"><span class="fl">Total</span><span class="fr">₹${fmt(total)}</span></div>
+  </div>`;
+}
+
+function fmt(n) { return Number(n||0).toLocaleString('en-IN'); }
+
+// ── WELCOME ──
+async function welcome() {
+  const connected = !!S.scriptUrl;
+  await botMsg(`👋 Hi! I'm your <strong>Site Expense Tracker</strong>.<br><br>You can:<br>• Type an expense — e.g. <span class="hi">50 bags Dalmia DSP cement from Ninbavasini 320/bag on 17-4-2026</span><br>• Upload a bill photo 📷<br><br>${connected ? '✅ Google Sheets is connected. Entries auto-save!' : '⚠️ Tap the yellow bar above to connect Google Sheets.'}<br><br>What would you like to add?`);
+}
+
+// ── SEND ──
+async function send() {
+  clearChips();
+  const ta = document.getElementById('itxt');
+  const txt = ta.value.trim(); if (!txt) return;
+  ta.value = ''; ta.style.height = '';
+  usrMsg(txt);
+  await handleText(txt);
+}
+
+async function handleText(txt) {
+  if (S.step === 'idle') {
+    S.pending = { type: 'manual', rawText: txt };
+    S.step = 'tab';
+    await botMsg(`Got it! Which <strong>tab</strong> should this go under?`);
+    showChips(TABS, async tab => { S.pending.tab = tab; await askShop(); });
+
+  } else if (S.step === 'tab') {
+    const m = TABS.find(t => t.toLowerCase() === txt.toLowerCase())
+           || TABS.find(t => txt.toLowerCase().includes(t.toLowerCase().split(' ')[0]));
+    if (m) { S.pending.tab = m; await askShop(); }
+    else {
+      await botMsg(`Please choose a tab:`);
+      showChips(TABS, async tab => { S.pending.tab = tab; await askShop(); });
+    }
+
+  } else if (S.step === 'shop') {
+    S.pending.shopOverride = txt;
+    await askStatus();
+
+  } else if (S.step === 'shop') {
+    S.pending.shopOverride = txt === 'Skip' ? '' : txt;
+    await askStatus();
+
+  } else if (S.step === 'status') {
+    const lo = txt.toLowerCase();
+    if (lo.includes('paid') && !lo.includes('un')) { S.pending.status = 'Paid'; await askMOP(); }
+    else if (lo.includes('unpaid') || lo.includes('un')) { S.pending.status = 'Unpaid'; await finish(); }
+    else { showChips(['Paid','Unpaid'], async s => { S.pending.status = s; s==='Paid' ? await askMOP() : await finish(); }); }
+
+  } else if (S.step === 'mop') {
+    const m = MOPS.find(x => x.toLowerCase() === txt.toLowerCase())
+           || MOPS.find(x => txt.toLowerCase().includes(x.toLowerCase().split(' ')[0]));
+    if (m) { S.pending.mop = m; await finish(); }
+    else { showChips(MOPS, async m => { S.pending.mop = m; await finish(); }); }
+  }
+}
+
+async function askStatus() {
+  S.step = 'status';
+  await botMsg(`Is this <strong>Paid</strong> or <strong>Unpaid</strong>?`);
+  showChips(['Paid','Unpaid'], async s => { S.pending.status = s; s==='Paid' ? await askMOP() : await finish(); });
+}
+
+async function askMOP() {
+  S.step = 'mop';
+  await botMsg(`Which <strong>payment method</strong>?`);
+  showChips(MOPS, async m => { S.pending.mop = m; await finish(); });
+}
+
+// ── FINISH ──
+async function finish() {
+  S.step = 'idle';
+  const p = S.pending;
+
+  if (p.type === 'manual') {
+    setHdrSub('Parsing...');
+    const parsed = await parseManual(p.rawText);
+    setHdrSub('online');
+    if (p.shopOverride !== undefined) parsed.shop = p.shopOverride || parsed.shop;
+    const entry = { ...parsed, tab: p.tab, status: p.status, mop: p.mop || '', id: Date.now(), addedAt: new Date().toISOString() };
+    S.entries.push(entry);
+    saveLocal();
+    const syncOk = await syncToSheets(entry);
+    updateSummary();
+
+    const amtStr = entry.amount ? `<span class="amt">₹${fmt(entry.amount)}</span>` : '(amount not detected)';
+    const syncBadge = syncOk ? '☁️ <span style="color:var(--green);font-size:12px">Saved to Google Sheets</span>' : '💾 <span style="color:var(--amber);font-size:12px">Saved locally (Sheets not connected)</span>';
+    await botMsg(`✅ <strong>Entry added!</strong><br><br>📂 Tab: <span class="tag">${esc(entry.tab)}</span><br>📅 Date: ${esc(entry.date || '—')}<br>📦 Material: ${esc(entry.material || entry.rawText)}<br>🏪 Shop: ${esc(entry.shop || '—')}<br>💰 Amount: ${amtStr}<br>💳 MOP: ${esc(entry.mop || '—')}<br>📋 Status: ${esc(entry.status)}<br><br>${syncBadge}`);
+
+  } else if (p.type === 'bill') {
+    const now = new Date().toISOString();
+    const synced = [];
+    const allEntries = p.items.map(item => ({
+      tab: p.tab, date: p.date, material: item.name,
+      shop: p.shop, qty: item.qty || '', unit: item.unit || '',
+      unit_price: item.rate || '', amount: item.amount,
+      status: p.status, mop: p.mop || '',
+      id: Date.now() + Math.random(), addedAt: now
+    }));
+
+    allEntries.forEach(e => S.entries.push(e));
+    saveLocal();
+
+    setHdrSub('Saving to Sheets...');
+    showSyncInd(true);
+    // Sync all items
+    for (const e of allEntries) {
+      const ok = await syncToSheets(e);
+      synced.push(ok);
+      await delay(120); // small delay between writes
+    }
+    showSyncInd(false);
+    setHdrSub('online');
+    updateSummary();
+
+    const allOk = synced.every(Boolean);
+    const syncBadge = allOk ? '☁️ <span style="color:var(--green);font-size:12px">All items saved to Google Sheets</span>' : '💾 <span style="color:var(--amber);font-size:12px">Saved locally (connect Sheets to sync)</span>';
+    await botMsg(`✅ <strong>${p.items.length} items added</strong> to <span class="tag">${esc(p.tab)}</span><br><br>📅 Date: ${esc(p.date)}<br>🏪 Shop: ${esc(p.shop)}<br>💰 Total: <span class="amt">₹${fmt(p.total)}</span><br>💳 MOP: ${esc(p.mop || '—')}<br>📋 Status: ${esc(p.status)}<br><br>${syncBadge}`);
+  }
+
+  setTimeout(() => botMsg(`What else would you like to add?`), 700);
+}
+
+// ── BILL FILE (image or PDF) ──
+async function handleBillFile(file) {
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const url = URL.createObjectURL(file);
+
+  // Show preview bubble
+  const r = mkEl('div','row usr');
+  if (isPdf) {
+    r.innerHTML = `<div class="bbl"><div class="img-thumb" style="padding:10px 14px;background:var(--bg3);display:flex;align-items:center;gap:8px;"><span style="font-size:22px">📄</span><span style="font-size:13px;color:var(--text2)">${esc(file.name)}</span></div><span class="ts">${nowStr()}</span></div>`;
+  } else {
+    r.innerHTML = `<div class="bbl"><div class="img-thumb"><img src="${url}"></div><span class="ts">${nowStr()}</span></div>`;
+  }
+  chat().appendChild(r); scroll();
+
+  setHdrSub('Reading bill...');
+  showSyncInd(true, 'Reading bill with AI...');
+
+  try {
+    const b64 = await toBase64(file);
+    const mediaType = isPdf ? 'application/pdf' : 'image/jpeg';
+    const bill = await extractBill(b64, mediaType, isPdf);
+    showSyncInd(false);
+    setHdrSub('online');
+
+    S.pending = { type: 'bill', ...bill };
+    S.step = 'tab';
+
+    const card = billCard(bill.items, bill.shop, bill.date, bill.total);
+    await botMsg(`Found this bill from <strong>${esc(bill.shop)}</strong>!${card}<br>🏪 Shop auto-detected: <strong>${esc(bill.shop)}</strong><br><br>Which <strong>tab</strong> should these items go under?`);
+    showChips(TABS, async tab => { S.pending.tab = tab; await askStatus(); });
+
+  } catch(err) {
+    showSyncInd(false); setHdrSub('online');
+    await botMsg(`<span class="err">Couldn't read that bill.</span> Try a clearer photo/PDF, or type the details manually.`);
+  }
+}
+
+async function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+async function extractBill(b64, mediaType = 'image/jpeg', isPdf = false) {
+  const sourceBlock = isPdf
+    ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } }
+    : { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } };
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: [
+          sourceBlock,
+          {type:'text', text:`Extract all data from this Indian construction/hardware bill or invoice. Return ONLY valid JSON:
+{
+  "shop": "vendor/shop name",
+  "date": "DD/MM/YYYY",
+  "invoice_no": "invoice number if visible",
+  "items": [{"name":"item description","qty":number_or_null,"unit":"unit string","rate":number_or_null,"amount":number}],
+  "subtotal": number,
+  "gst": number,
+  "total": number
+}
+Return ONLY the JSON, nothing else.`}
+        ]
+      }]
+    })
+  });
+  const d = await resp.json();
+  const txt = d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+  return JSON.parse(txt);
+}
+
+async function parseManual(text) {
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: `Parse this Indian construction expense entry. Return ONLY JSON:
+"${text}"
+{"date":"DD/MM/YYYY or empty","material":"brand and item","shop":"supplier name","qty":"quantity","unit":"unit","unit_price":number_or_null,"amount":number_or_null,"notes":""}
+Return ONLY JSON.`
+        }]
+      })
+    });
+    const d = await resp.json();
+    const txt = d.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    return { ...JSON.parse(txt), rawText: text };
+  } catch {
+    const amtM = text.match(/(?:₹|rs\.?|bill is|amount\s*(?:is)?)\s*([\d,]+)/i) || text.match(/([\d,]+)\s*$/);
+    const dateM = text.match(/(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/);
+    return { date: dateM?.[1]||'', material: text, shop:'', qty:'', unit:'', unit_price:null, amount: amtM?parseInt(amtM[1].replace(/,/g,'')):null, rawText:text };
+  }
+}
+
+// ── GOOGLE SHEETS SYNC ──
+async function syncToSheets(entry) {
+  if (!S.scriptUrl) return false;
+  showSyncInd(true);
+  try {
+    await fetch(S.scriptUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(entry)
+    });
+    showSyncInd(false);
+    return true;
+  } catch(e) {
+    showSyncInd(false);
+    return false;
+  }
+}
+
+// ── SETUP MODAL ──
+function openSetup() { document.getElementById('modalWrap').classList.add('show'); document.getElementById('scriptUrl').value = S.scriptUrl; }
+function closeSetup() { document.getElementById('modalWrap').classList.remove('show'); }
+function closeSetupIfOuter(e) { if (e.target === document.getElementById('modalWrap')) closeSetup(); }
+
+async function saveScriptUrl() {
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url || !url.includes('script.google.com')) {
+    toast('Please enter a valid Apps Script URL'); return;
+  }
+  S.scriptUrl = url;
+  localStorage.setItem('se_script_url', url);
+
+  // Test connection
+  const btn = document.querySelector('.mbtn.primary');
+  btn.textContent = 'Testing...'; btn.disabled = true;
+  try {
+    const resp = await fetch(url + '?test=1', { mode: 'no-cors' });
+    toast('✅ Connected! Entries will now auto-save to Sheets');
+    updateSetupBanner();
+    closeSetup();
+  } catch(e) {
+    // no-cors means we can't read response, but if no network error it's working
+    toast('✅ URL saved! Test by adding an entry.');
+    updateSetupBanner();
+    closeSetup();
+  }
+  btn.textContent = 'Save & Test'; btn.disabled = false;
+}
+
+function updateSetupBanner() {
+  const connected = !!S.scriptUrl;
+  document.getElementById('setupDot').classList.toggle('connected', connected);
+  document.getElementById('setupTitle').textContent = connected ? 'Google Sheets connected ✓' : 'Connect Google Sheets';
+  document.getElementById('setupDesc').textContent = connected ? 'Entries auto-save to your sheet' : 'Tap to set up — takes 5 minutes, free';
+  document.getElementById('hdrSub').textContent = connected ? 'synced to Google Sheets' : 'online';
+}
+
+// ── SUMMARY ──
+function toggleSum() {
+  S.sumOpen = !S.sumOpen;
+  document.getElementById('sumBody').classList.toggle('open', S.sumOpen);
+  document.getElementById('sumArr').classList.toggle('open', S.sumOpen);
+}
+
+function updateSummary() {
+  const totals = {};
+  let grand = 0;
+  S.entries.forEach(e => {
+    const a = Number(e.amount||0);
+    totals[e.tab] = (totals[e.tab]||0) + a;
+    grand += a;
+  });
+  document.getElementById('sumTotal').textContent = '₹' + grand.toLocaleString('en-IN');
+  const grid = document.getElementById('sumGrid');
+  const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+  grid.innerHTML = sorted.map(([t,v]) =>
+    `<div class="sum-card"><div class="sum-card-lbl">${esc(t)}</div><div class="sum-card-val">₹${v.toLocaleString('en-IN')}</div></div>`
+  ).join('') || '<div style="padding:8px;font-size:12px;color:var(--text3)">No entries yet</div>';
+}
+
+// ── UTILS ──
+function saveLocal() { localStorage.setItem('se_entries', JSON.stringify(S.entries)); }
+function setHdrSub(t) { document.getElementById('hdrSub').textContent = t; }
+function showSyncInd(show, txt) {
+  const el = document.getElementById('syncInd');
+  el.classList.toggle('show', show);
+  if (txt) el.querySelector('span').textContent = txt;
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function downloadCSV() {
+  if (!S.entries.length) { toast('No entries to download'); return; }
+  const h = ['Tab','Date','Material','Shop','Qty','Unit','Unit Price','Amount','MOP','Status'];
+  const rows = S.entries.map(e =>
+    [e.tab,e.date,e.material,e.shop,e.qty,e.unit,e.unit_price,e.amount,e.mop,e.status]
+    .map(v=>`"${v||''}"`).join(',')
+  );
+  const csv = [h.join(','),...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'site_expenses_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+init();
+</script>
+</body>
+</html>
