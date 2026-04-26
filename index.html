@@ -673,6 +673,13 @@ async function handleBillFile(file) {
   setHdrSub('Reading bill...');
   showSyncInd(true, 'Reading bill with AI...');
 
+  const apiKey = ANTHROPIC_KEY();
+  if (!apiKey) {
+    showSyncInd(false); setHdrSub('online');
+    await botMsg(`<span class="err">No API key found.</span> Tap ⚙ gear icon and enter your Claude API key first.`);
+    return;
+  }
+
   try {
     const b64 = await toBase64(file);
     const mediaType = isPdf ? 'application/pdf' : 'image/jpeg';
@@ -689,7 +696,9 @@ async function handleBillFile(file) {
 
   } catch(err) {
     showSyncInd(false); setHdrSub('online');
-    await botMsg(`<span class="err">Couldn't read that bill.</span> Try a clearer photo/PDF, or type the details manually.`);
+    const errMsg = err && err.message ? err.message : String(err);
+    await botMsg(`<span class="err">Couldn't read that bill.</span><br><span style="font-size:11px;color:var(--text3)">Error: ${errMsg}</span><br><br>Possible fix: tap ⚙ and make sure your API key is saved correctly.`);
+    console.error('Bill read error:', err);
   }
 }
 
