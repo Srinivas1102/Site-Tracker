@@ -448,7 +448,7 @@ let S = {
   step: 'idle',
   pending: null,
   entries: JSON.parse(localStorage.getItem('se_entries') || '[]'),
-  scriptUrl: localStorage.getItem('se_script_url') || 'https://script.google.com/macros/s/AKfycbw2Am2hCL0MHY8GDGrwVAdS46d1FLyDsKYMsp_tfe_H2VtDaH-cMoQ_W_34lRtcVGV_2Q/exec',
+  scriptUrl: localStorage.getItem('se_script_url') || 'https://script.google.com/macros/s/AKfycbxwgLgBezKjtpb9lYyGDWJA0IMQUIL44oErXw7di6GQw0lWBzFI-EOeMvjIQReLCw1r7g/exec',
   sumOpen: false,
 };
 
@@ -522,15 +522,17 @@ function chat() { return document.getElementById('chat'); }
 function scroll() { setTimeout(() => chat().scrollTop = chat().scrollHeight, 50); }
 function mkEl(tag, cls) { const e = document.createElement(tag); if(cls) e.className = cls; return e; }
 
-function billCard(items, shop, date, total) {
+function billCard(items, shop, date, total, gst, subtotal) {
   const rows = items.slice(0, 9).map(it =>
     `<div class="bill-row"><span class="bl">${esc(it.name)}${it.qty ? ' ×' + it.qty : ''}</span><span class="br">₹${fmt(it.amount)}</span></div>`
   ).join('');
   const more = items.length > 9 ? `<div class="bill-row"><span class="bl" style="color:var(--text3)">...+${items.length-9} more items</span><span class="br"></span></div>` : '';
+  const gstRow = gst ? `<div class="bill-row"><span class="bl" style="color:var(--text2)">Subtotal</span><span class="br">₹${fmt(subtotal)}</span></div>
+    <div class="bill-row"><span class="bl" style="color:var(--text2)">GST</span><span class="br">₹${fmt(gst)}</span></div>` : '';
   return `<div class="bill-card">
     <div class="bill-hdr">🧾 ${esc(shop)} · ${esc(date)}</div>
-    ${rows}${more}
-    <div class="bill-foot"><span class="fl">Total</span><span class="fr">₹${fmt(total)}</span></div>
+    ${rows}${more}${gstRow}
+    <div class="bill-foot"><span class="fl">Total (with GST)</span><span class="fr">₹${fmt(total)}</span></div>
   </div>`;
 }
 
@@ -633,7 +635,9 @@ async function finish() {
       id: Date.now() + Math.random(), addedAt: now
     }));
 
-    allEntries.forEach(e => S.entries.push(e));
+    // Add GST info to each entry for sheets
+    const gstPerItem = p.gst && p.items.length ? p.gst / p.items.length : 0;
+    allEntries.forEach(e => { e.gst_amount = gstPerItem.toFixed(2); S.entries.push(e); });
     saveLocal();
 
     setHdrSub('Saving to Sheets...');
@@ -650,7 +654,8 @@ async function finish() {
 
     const allOk = synced.every(Boolean);
     const syncBadge = allOk ? '☁️ <span style="color:var(--green);font-size:12px">All items saved to Google Sheets</span>' : '💾 <span style="color:var(--amber);font-size:12px">Saved locally (connect Sheets to sync)</span>';
-    await botMsg(`✅ <strong>${p.items.length} items added</strong> to <span class="tag">${esc(p.tab)}</span><br><br>📅 Date: ${esc(p.date)}<br>🏪 Shop: ${esc(p.shop)}<br>💰 Total: <span class="amt">₹${fmt(p.total)}</span><br>💳 MOP: ${esc(p.mop || '—')}<br>📋 Status: ${esc(p.status)}<br><br>${syncBadge}`);
+    const gstLine = p.gst ? `<br>🧾 GST: <span class="amt">₹${fmt(p.gst)}</span>` : '';
+    await botMsg(`✅ <strong>${p.items.length} items added</strong> to <span class="tag">${esc(p.tab)}</span><br><br>📅 Date: ${esc(p.date)}<br>🏪 Shop: ${esc(p.shop)}<br>💰 Subtotal: <span class="amt">₹${fmt(p.subtotal)}</span>${gstLine}<br>💰 <strong>Total: <span class="amt">₹${fmt(p.total)}</span></strong><br>💳 MOP: ${esc(p.mop || '—')}<br>📋 Status: ${esc(p.status)}<br><br>${syncBadge}`);
   }
 
   setTimeout(() => botMsg(`What else would you like to add?`), 700);
@@ -690,7 +695,7 @@ async function handleBillFile(file) {
     S.pending = { type: 'bill', ...bill };
     S.step = 'tab';
 
-    const card = billCard(bill.items, bill.shop, bill.date, bill.total);
+    const card = billCard(bill.items, bill.shop, bill.date, bill.total, bill.gst, bill.subtotal);
     await botMsg(`Found this bill from <strong>${esc(bill.shop)}</strong>!${card}<br>🏪 Shop auto-detected: <strong>${esc(bill.shop)}</strong><br><br>Which <strong>tab</strong> should these items go under?`);
     showChips(TABS, async tab => { S.pending.tab = tab; await askStatus(); });
 
@@ -738,9 +743,18 @@ async function extractBill(b64, mediaType = 'image/jpeg', isPdf = false) {
   "invoice_no": "invoice number if visible",
   "items": [{"name":"item description","qty":number_or_null,"unit":"unit string","rate":number_or_null,"amount":number}],
   "subtotal": number,
+  "cgst": number,
+  "sgst": number,
   "gst": number,
   "total": number
 }
+IMPORTANT: 
+- "subtotal" = total before GST
+- "cgst" = CGST amount
+- "sgst" = SGST amount  
+- "gst" = total GST (cgst + sgst)
+- "total" = final amount including all GST
+- item "amount" = the final amount for that item including discount but before GST
 Return ONLY the JSON, nothing else.`}
         ]
       }]
