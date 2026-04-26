@@ -652,13 +652,31 @@ async function finish() {
     allEntries.forEach(e => { e.gst_amount = gstPerItem.toFixed(2); S.entries.push(e); });
     saveLocal();
 
+    // Force add GST as last entry if bill has GST
+    if (p.gst && parseFloat(p.gst) > 0) {
+      allEntries.push({
+        tab: p.tab,
+        date: p.date,
+        material: 'GST Amount (CGST + SGST)',
+        shop: p.shop,
+        qty: '1',
+        unit: 'GST',
+        unit_price: '',
+        amount: parseFloat(p.gst),
+        status: p.status,
+        mop: p.mop || '',
+        id: Date.now() + Math.random(),
+        addedAt: now
+      });
+    }
+
     setHdrSub('Saving to Sheets...');
     showSyncInd(true);
-    // Sync all items
+    // Sync all items including GST row
     for (const e of allEntries) {
       const ok = await syncToSheets(e);
       synced.push(ok);
-      await delay(120); // small delay between writes
+      await delay(150);
     }
     showSyncInd(false);
     setHdrSub('online');
