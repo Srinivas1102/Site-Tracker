@@ -522,17 +522,18 @@ function chat() { return document.getElementById('chat'); }
 function scroll() { setTimeout(() => chat().scrollTop = chat().scrollHeight, 50); }
 function mkEl(tag, cls) { const e = document.createElement(tag); if(cls) e.className = cls; return e; }
 
-function billCard(items, shop, date, total, gst, subtotal) {
+function billCard(items, shop, date, total, gst, subtotal, delivery) {
   const rows = items.slice(0, 9).map(it =>
     `<div class="bill-row"><span class="bl">${esc(it.name)}${it.qty ? ' ×' + it.qty : ''}</span><span class="br">₹${fmt(it.amount)}</span></div>`
   ).join('');
   const more = items.length > 9 ? `<div class="bill-row"><span class="bl" style="color:var(--text3)">...+${items.length-9} more items</span><span class="br"></span></div>` : '';
   const gstRow = gst ? `<div class="bill-row"><span class="bl" style="color:var(--text2)">Subtotal</span><span class="br">₹${fmt(subtotal)}</span></div>
     <div class="bill-row"><span class="bl" style="color:var(--text2)">GST</span><span class="br">₹${fmt(gst)}</span></div>` : '';
+  const deliveryRow = delivery ? `<div class="bill-row"><span class="bl" style="color:var(--text2)">Delivery</span><span class="br">₹${fmt(delivery)}</span></div>` : '';
   return `<div class="bill-card">
     <div class="bill-hdr">🧾 ${esc(shop)} · ${esc(date)}</div>
-    ${rows}${more}${gstRow}
-    <div class="bill-foot"><span class="fl">Total (with GST)</span><span class="fr">₹${fmt(total)}</span></div>
+    ${rows}${more}${gstRow}${deliveryRow}
+    <div class="bill-foot"><span class="fl">Total (incl. GST + Delivery)</span><span class="fr">₹${fmt(total)}</span></div>
   </div>`;
 }
 
@@ -652,7 +653,7 @@ async function finish() {
     allEntries.forEach(e => { e.gst_amount = gstPerItem.toFixed(2); S.entries.push(e); });
     saveLocal();
 
-    // Force add GST as last entry if bill has GST
+    // Force add GST as separate row
     if (p.gst && parseFloat(p.gst) > 0) {
       allEntries.push({
         tab: p.tab,
@@ -663,6 +664,24 @@ async function finish() {
         unit: 'GST',
         unit_price: '',
         amount: parseFloat(p.gst),
+        status: p.status,
+        mop: p.mop || '',
+        id: Date.now() + Math.random(),
+        addedAt: now
+      });
+    }
+
+    // Force add Delivery charge as separate row if present
+    if (p.delivery && parseFloat(p.delivery) > 0) {
+      allEntries.push({
+        tab: p.tab,
+        date: p.date,
+        material: 'Delivery / Transport Charge',
+        shop: p.shop,
+        qty: '1',
+        unit: 'charge',
+        unit_price: '',
+        amount: parseFloat(p.delivery),
         status: p.status,
         mop: p.mop || '',
         id: Date.now() + Math.random(),
@@ -725,7 +744,7 @@ async function handleBillFile(file) {
     S.pending = { type: 'bill', ...bill };
     S.step = 'tab';
 
-    const card = billCard(bill.items, bill.shop, bill.date, bill.total, bill.gst, bill.subtotal);
+    const card = billCard(bill.items, bill.shop, bill.date, bill.total, bill.gst, bill.subtotal, bill.delivery);
     await botMsg(`Found this bill from <strong>${esc(bill.shop)}</strong>!${card}<br>🏪 Shop auto-detected: <strong>${esc(bill.shop)}</strong><br><br>Which <strong>tab</strong> should these items go under?`);
     showChips(TABS, async tab => { S.pending.tab = tab; await askStatus(); });
 
@@ -776,15 +795,17 @@ async function extractBill(b64, mediaType = 'image/jpeg', isPdf = false) {
   "cgst": number,
   "sgst": number,
   "gst": number,
+  "delivery": number,
   "total": number
 }
-IMPORTANT: 
+IMPORTANT:
 - "subtotal" = total before GST
 - "cgst" = CGST amount
-- "sgst" = SGST amount  
+- "sgst" = SGST amount
 - "gst" = total GST (cgst + sgst)
-- "total" = final amount including all GST
-- item "amount" = the final amount for that item including discount but before GST
+- "delivery" = delivery/transport/freight/shipping charge if any, else 0
+- "total" = final amount including GST and delivery
+- item "amount" = amount for that item after discount
 Return ONLY the JSON, nothing else.`}
         ]
       }]
