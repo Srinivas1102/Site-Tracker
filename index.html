@@ -438,6 +438,7 @@ body{
 
 <script>
 // ── STATE ──
+const ANTHROPIC_KEY = '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';
 const TABS = ['Cement','JCB','Water','Electrical','Sand and Jalli','Plumbing','Filling Sand','Local Shop','Carpentry','Painting','Tiles','Rod','Fosroc Dr Fixit','Bricks','Tiles Paste','RMC','Batha Expense','Other Expense','EB','UPVC','Granite','Grill'];
 const MOPS = ['Cash','GK Promoters','Srinivas HDFC','Ganesh HDFC','Bank Transfer','Gpay Srinivas'];
 
@@ -706,7 +707,12 @@ async function extractBill(b64, mediaType = 'image/jpeg', isPdf = false) {
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: {'Content-Type':'application/json'},
+    headers: {
+      'Content-Type':'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
@@ -738,7 +744,12 @@ async function parseManual(text) {
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      headers: {
+        'Content-Type':'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 600,
